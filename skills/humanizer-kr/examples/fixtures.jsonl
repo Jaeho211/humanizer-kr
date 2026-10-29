@@ -1,0 +1,8 @@
+{"id":"technical","genre":"기술","input":"이 Validator는 단순히 차선 연결 오류를 검출하는 도구가 아니라, junction과 lane index까지 포괄적으로 검증하는 중요한 역할을 수행합니다.","example":"이 Validator는 차선 연결 오류뿐 아니라 junction과 lane index도 검사합니다.","checks":["차선 연결","junction","lane index","존대 유지"]}
+{"id":"caution","genre":"보고서","input":"실험 결과 성능이 약 15% 향상될 가능성이 있습니다. 다만 3개 시나리오에서만 검증했습니다.","example":"3개 시나리오에서만 검증했지만, 실험 결과 성능이 약 15% 향상될 가능성이 있습니다.","checks":["15%","3개","가능성","한계"]}
+{"id":"filler","genre":"업무용 메시지","input":"먼저 이번 프로젝트의 진행 현황에 대해서 간략히 말씀드리고자 합니다. 현재 테스트는 완료됐습니다.","example":"이번 프로젝트의 테스트는 완료됐습니다.","checks":["테스트 완료"]}
+{"id":"already-good","genre":"대화","input":"오늘 파일 받으면 연결이 끊긴 구간부터 확인할게요.","example":"오늘 파일 받으면 연결이 끊긴 구간부터 확인할게요.","checks":["원문 유지","해요체"]}
+{"id":"markdown","genre":"기술","input":"`--max-num-seqs 32`를 유지합니다.\n\n```bash\npython run.py --count 32\n```\n\n결과는 https://example.com/xodr?v=32 에서 확인하세요.","example":"`--max-num-seqs 32`를 유지합니다.\n\n```bash\npython run.py --count 32\n```\n\n결과는 https://example.com/xodr?v=32 에서 확인하세요.","checks":["코드 보존","URL 보존","32 보존"]}
+{"id":"contrast-valid","genre":"기술","input":"이 값은 평균이 아니라 중앙값입니다.","example":"이 값은 평균이 아니라 중앙값입니다.","checks":["실제 대비 유지"]}
+{"id":"request","genre":"업무용 메시지","input":"가능하시다면 금요일 오후 3시 이전에 결과를 공유해 주시면 감사하겠습니다.","example":"가능하시다면 금요일 오후 3시 이전에 결과를 공유해 주세요.","checks":["조건과 기한 보존","존대 유지"]}
+{"id":"passive","genre":"기술","input":"로그는 서버에 의해 자동적으로 생성되었습니다.","example":"서버가 로그를 자동 생성했습니다.","checks":["서버 주체","생성 완료"]}

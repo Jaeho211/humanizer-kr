@@ -33,6 +33,7 @@ SIGNALS = {
     "staged-contrast": r"단순히.{1,70}(?:가|이)?\s*아니라",
     "generic-importance": r"(?:매우 중요한 역할을 수행|중요한 역할을 수행)",
     "verbose-causative": r"(?:자동적으로|포괄적으로|종합적으로)\s*(?:검토|확인|생성|수행)",
+    "repeated-summary-cue": r"(?:정리하자면|요약하면|다시 말해|결론부터 말씀드리면)",
 }
 
 
@@ -60,16 +61,29 @@ def signals(text: str) -> dict[str, int]:
     return {key: len(re.findall(pattern, prose)) for key, pattern in SIGNALS.items()}
 
 
+
+def exact_repeated_sentences(text: str) -> list[str]:
+    """Find exact repeated sentences; paraphrases require model/human judgment."""
+    prose = mask_nonprose(text)
+    parts = re.split(r"(?<=[.!?。！？])\s+|\n+", prose)
+    sentences = [re.sub(r"\s+", " ", p).strip() for p in parts]
+    counts = Counter(s for s in sentences if len(s) >= 12)
+    return [s for s, n in counts.items() if n > 1]
+
+
 def _counter_diff(a: list[str], b: list[str]) -> tuple[list[str], list[str]]:
     left, right = Counter(a), Counter(b)
     return list((left - right).elements()), list((right - left).elements())
 
 
 def audit(original: str, revised: str | None = None) -> dict:
-    report: dict = {"passed_literal_checks": True, "violations": [], "style_signals_before": signals(original)}
+    report: dict = {"passed_literal_checks": True, "violations": [], "style_signals_before": signals(original),
+                    "exact_repeated_sentences_before": exact_repeated_sentences(original)}
     if revised is None:
         return report
     report["style_signals_after"] = signals(revised)
+    report["exact_repeated_sentences_after"] = exact_repeated_sentences(revised)
+    report["length_chars"] = {"before": len(original), "after": len(revised)}
     a, b = protected(original), protected(revised)
     for category in a:
         missing, added = _counter_diff(a[category], b[category])
@@ -88,7 +102,7 @@ def audit(original: str, revised: str | None = None) -> dict:
     if missing or added:
         report["review_acronyms"] = {"removed": missing, "added": added}
     report["passed_literal_checks"] = not report["violations"]
-    report["limitations"] = "숫자·코드·URL·템플릿만 기계적으로 비교합니다. 의미·고유명사·논리 보존은 별도 대조가 필요합니다."
+    report["limitations"] = "동일 문장 반복만 기계적으로 탐지합니다. 비슷한 뜻의 반복과 의미 보존은 모델/사람이 검토해야 합니다. 글자 수는 참고 정보이며 품질 점수가 아닙니다."
     return report
 
 
@@ -111,8 +125,13 @@ def main() -> int:
             if "review_acronyms" in result:
                 print("  기술 식별자 수동 확인:", result["review_acronyms"])
         print("스타일 검토 신호 (전):", {k: v for k, v in result["style_signals_before"].items() if v})
+        if result["exact_repeated_sentences_before"]:
+            print("동일 문장 반복 (전):", result["exact_repeated_sentences_before"])
         if revised is not None:
             print("스타일 검토 신호 (후):", {k: v for k, v in result["style_signals_after"].items() if v})
+            if result["exact_repeated_sentences_after"]:
+                print("동일 문장 반복 (후):", result["exact_repeated_sentences_after"])
+            print("글자 수 변화 (참고용):", result["length_chars"])
         print("주의: 의미 보존 여부는 자동 판정하지 않습니다.")
     return 0 if result["passed_literal_checks"] else 2
 

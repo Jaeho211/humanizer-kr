@@ -54,5 +54,18 @@ class TestAudit(unittest.TestCase):
         self.assertTrue(mod.audit('', '')['passed_literal_checks'])
         self.assertTrue(mod.audit('안녕하세요', '반갑습니다')['passed_literal_checks'])
 
+    def test_exact_repetition_is_detected(self):
+        original = '현재 설정을 유지합니다. 현재 설정을 유지합니다.'
+        revised = '현재 설정을 유지합니다.'
+        report = mod.audit(original, revised)
+        self.assertEqual(report['exact_repeated_sentences_before'], ['현재 설정을 유지합니다.'])
+        self.assertEqual(report['exact_repeated_sentences_after'], [])
+        self.assertLess(report['length_chars']['after'], report['length_chars']['before'])
+
+    def test_semantic_similarity_not_claimed_detected(self):
+        original = '현재 설정을 유지하는 편이 좋습니다. 지금은 설정을 바꾸지 않는 것이 좋겠습니다.'
+        self.assertEqual(mod.exact_repeated_sentences(original), [])
+
+
 if __name__ == '__main__':
     unittest.main()

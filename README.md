@@ -6,46 +6,18 @@
 
 ## 설치
 
-```bash
-git clone https://github.com/Jaeho211/humanizer-kr.git
-cd humanizer-kr
-bash install.sh --dry-run        # 설치 대상 확인
-bash install.sh                  # 사용자 전역, 기본은 복사 설치
-# 기존 버전 업데이트:
-bash install.sh --force
-```
-
-프로젝트 한정 설치:
+저장소를 내려받은 뒤 프로젝트 루트에서 아래 명령 하나만 실행하세요.
 
 ```bash
-bash install.sh --scope project --project /path/to/repository
+bash install.sh
 ```
 
-특정 에이전트만:
-
-```bash
-bash install.sh --agents omp,agy --dry-run
-bash install.sh --agents codex,claude
-```
-
-`--link`는 저장소를 계속 보존할 때만 권장합니다. 기본 복사는 압축 해제 폴더를 나중에 삭제해도 스킬이 남습니다. `--force`는 설치 대상의 기존 스킬을 `.bak.TIMESTAMP`로 백업합니다. 기본값은 기존 스킬을 덮어쓰지 않습니다.
-
-### 검색 경로
-
-| 에이전트 | 전역 경로 | 프로젝트 경로 |
-|---|---|---|
-| OMP | `~/.omp/agent/skills/humanizer-kr` | `.omp/skills/humanizer-kr` |
-| AGY CLI | `~/.gemini/antigravity-cli/skills/humanizer-kr` | `.agents/skills/humanizer-kr` |
-| AGY IDE | `~/.gemini/config/skills/humanizer-kr` | `.agents/skills/humanizer-kr` |
-| Codex | `~/.codex/skills/humanizer-kr` | `.agents/skills/humanizer-kr` |
-| Claude Code | `~/.claude/skills/humanizer-kr` | `.claude/skills/humanizer-kr` |
-
-`agy` 선택 시 AGY CLI와 IDE 전역 경로에 각각 설치합니다. 프로젝트 경로 `.agents/skills`는 AGY와 Codex가 공유하므로 중복 복사하지 않습니다.
+OMP, **AGY CLI**, Codex, Claude Code에 모두 설치합니다. 다시 실행하면 변경된 스킬을 자동 갱신하고 기존 파일은 백업합니다. AGY IDE는 설치 대상이 아닙니다.
 
 ## 사용
 
 - OMP: `/skill:humanizer-kr 아래 문단을 자연스럽게 다듬어줘: ...`
-- AGY CLI / IDE: `/humanizer-kr 아래 글을 최소 수정으로 윤문해줘: ...`
+- AGY CLI: `/humanizer-kr 아래 글을 최소 수정으로 윤문해줘: ...`
 - Codex: `$humanizer-kr 이 Markdown 문서에서 번역투만 고쳐줘`
 - Claude Code: `/humanizer-kr 다음 이메일을 윤문해줘: ...`
 - 자연어 요청: `humanizer-kr 스킬을 사용해서 이 글의 AI 문체를 줄이고 숫자·고유명사는 유지해줘.`

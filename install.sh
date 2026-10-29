@@ -15,13 +15,13 @@ usage() {
   cat <<'USAGE'
 Usage: bash install.sh [--scope user|project] [--project DIR] [--agents omp,agy,codex,claude]
                        [--copy|--link] [--force] [--dry-run]
-Default: user-wide install for all four agents, with copies.
-Agents: omp, agy (CLI + IDE), codex, claude, all.
+Default: install or update all four agents in user scope, keeping backups.
+Agents: omp, agy (CLI only), codex, claude, all.
 Examples:
   bash install.sh --dry-run
   bash install.sh --scope project --project "$PWD" --agents all
   bash install.sh --force --agents omp,agy
-Note: --force backs up existing target directories as *.bak.TIMESTAMP.
+Note: changed installations are backed up as *.bak.TIMESTAMP; --force also re-installs unchanged ones.
 USAGE
 }
 
@@ -51,7 +51,7 @@ get_targets() {
   if [[ "$SCOPE" == user ]]; then
     case "$agent" in
       omp) printf '%s\n' "${OMP_HOME:-$HOME/.omp/agent}/skills/humanizer-kr" ;;
-      agy) printf '%s\n' "${AGY_CLI_HOME:-$HOME/.gemini/antigravity-cli}/skills/humanizer-kr" "${AGY_IDE_HOME:-$HOME/.gemini/config}/skills/humanizer-kr" ;;
+      agy) printf '%s\n' "${AGY_CLI_HOME:-$HOME/.gemini/antigravity-cli}/skills/humanizer-kr" ;;
       codex) printf '%s\n' "${CODEX_HOME:-$HOME/.codex}/skills/humanizer-kr" ;;
       claude) printf '%s\n' "${CLAUDE_HOME:-$HOME/.claude}/skills/humanizer-kr" ;;
       *) echo "Unknown agent: $agent" >&2; exit 2 ;;
@@ -83,10 +83,21 @@ stamp="$(date +%Y%m%d%H%M%S)"
 for target in "${targets[@]}"; do
   if [[ -e "$target" || -L "$target" ]]; then
     if [[ "$FORCE" -ne 1 ]]; then
-      echo "SKIP (already exists; use --force): $target"
-      continue
+      if [[ "$MODE" == copy && -d "$target" && ! -L "$target" ]] && diff -qr "$SOURCE" "$target" >/dev/null; then
+        echo "UP-TO-DATE: $target"
+        continue
+      fi
+      if [[ "$MODE" == link && -L "$target" && "$(readlink "$target")" == "$SOURCE" ]]; then
+        echo "UP-TO-DATE: $target"
+        continue
+      fi
     fi
     backup="$target.bak.$stamp"
+    suffix=1
+    while [[ -e "$backup" || -L "$backup" ]]; do
+      backup="$target.bak.$stamp.$suffix"
+      suffix=$((suffix + 1))
+    done
     echo "BACKUP $target -> $backup"
     if [[ "$DRY" -eq 0 ]]; then mv "$target" "$backup"; fi
   fi

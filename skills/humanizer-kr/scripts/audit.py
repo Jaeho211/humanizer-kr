@@ -95,7 +95,7 @@ def audit(original: str, revised: str | None = None) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="원문 UTF-8 텍스트/Markdown 파일")
-    parser.add_argument("--output", type=Path, help="윤문본 파일. 생략 시 스타일 신호만 보고")
+    parser.add_argument("--output", type=Path, help="수정본 파일. 생략 시 스타일 신호만 보고")
     parser.add_argument("--json", action="store_true", help="JSON 출력")
     args = parser.parse_args()
     source = args.input.read_text(encoding="utf-8")

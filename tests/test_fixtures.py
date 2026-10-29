@@ -24,6 +24,23 @@ class TestConciseFixtures(unittest.TestCase):
             if row["id"] in ("semantic-duplicate", "intro-recapping", "padded-answer"):
                 self.assertLess(len(row["example"]), len(row["input"]))
 
+    def test_document_editing_defaults_to_shorter_when_safe(self):
+        docs = [r for r in self.rows if r.get("intent") == "default-document-shorter"]
+        self.assertGreaterEqual(len(docs), 4)
+        for row in docs:
+            self.assertLessEqual(len(row["example"]), len(row["input"]))
+            self.assertTrue(row["checks"])
+        self.assertTrue(any(len(r["example"]) < len(r["input"]) for r in docs))
+        self.assertTrue(any(r["example"] == r["input"] for r in docs))
+
+    def test_document_technical_terms_are_preserved(self):
+        for row in self.rows:
+            if row.get("intent") != "default-document-shorter":
+                continue
+            for term in ["lane", "junction", "JSON", "CARLA 0.10.0", "road 43", "junction 100063"]:
+                if term in row["input"]:
+                    self.assertIn(term, row["example"])
+
     def test_distinct_conditions_are_preserved(self):
         row = next(r for r in self.rows if r["id"] == "preserve-distinct-conditions")
         for term in ("역방향", "junction 100063"):

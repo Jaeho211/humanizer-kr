@@ -50,13 +50,13 @@ class TestInstall(unittest.TestCase):
             target = home / ".omp/agent/skills/humanizer-kr"
             old = target.parent / "humanizer-kr.bak.20261029105201"
             old.mkdir()
-            (old / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            (old / "SKILL.md").write_text("---\nname: humanizer-kr\n---\n")
             unrelated = target.parent / "humanizer-kr.bak.20261029105202"
             unrelated.mkdir()
-            (unrelated / "SKILL.md").write_text("---\\nname: other-skill\\n---\\n")
+            (unrelated / "SKILL.md").write_text("---\nname: other-skill\n---\n")
             manual = target.parent / "humanizer-kr.bak.manual"
             manual.mkdir()
-            (manual / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            (manual / "SKILL.md").write_text("---\nname: humanizer-kr\n---\n")
             output = self.run_installer(home)
             self.assertIn("REMOVE OLD BACKUP:", output)
             self.assertFalse(old.exists())
@@ -70,7 +70,7 @@ class TestInstall(unittest.TestCase):
             target = home / ".omp/agent/skills/humanizer-kr"
             old = target.parent / "humanizer-kr.bak.20261029105201"
             old.mkdir()
-            (old / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            (old / "SKILL.md").write_text("---\nname: humanizer-kr\n---\n")
             output = self.run_installer(home, "--dry-run")
             self.assertIn("REMOVE OLD BACKUP:", output)
             self.assertTrue(old.exists())

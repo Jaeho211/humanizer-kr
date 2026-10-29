@@ -41,8 +41,53 @@ class TestInstall(unittest.TestCase):
             self.run_installer(home)
             self.assertNotEqual(marker.read_text(), "modified\n")
             backups = list(targets[0].parent.glob("humanizer-kr.bak.*"))
-            self.assertEqual(len(backups), 1)
-            self.assertEqual((backups[0] / "SKILL.md").read_text(), "modified\n")
+            self.assertEqual(backups, [])
+
+    def test_removes_only_previous_installer_backups(self):
+        with tempfile.TemporaryDirectory() as td:
+            home = Path(td)
+            self.run_installer(home)
+            target = home / ".omp/agent/skills/humanizer-kr"
+            old = target.parent / "humanizer-kr.bak.20261029105201"
+            old.mkdir()
+            (old / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            unrelated = target.parent / "humanizer-kr.bak.20261029105202"
+            unrelated.mkdir()
+            (unrelated / "SKILL.md").write_text("---\\nname: other-skill\\n---\\n")
+            manual = target.parent / "humanizer-kr.bak.manual"
+            manual.mkdir()
+            (manual / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            output = self.run_installer(home)
+            self.assertIn("REMOVE OLD BACKUP:", output)
+            self.assertFalse(old.exists())
+            self.assertTrue(unrelated.exists())
+            self.assertTrue(manual.exists())
+
+    def test_dry_run_preserves_backups(self):
+        with tempfile.TemporaryDirectory() as td:
+            home = Path(td)
+            self.run_installer(home)
+            target = home / ".omp/agent/skills/humanizer-kr"
+            old = target.parent / "humanizer-kr.bak.20261029105201"
+            old.mkdir()
+            (old / "SKILL.md").write_text("---\\nname: humanizer-kr\\n---\\n")
+            output = self.run_installer(home, "--dry-run")
+            self.assertIn("REMOVE OLD BACKUP:", output)
+            self.assertTrue(old.exists())
+
+    def test_symlink_backups_and_project_targets(self):
+        with tempfile.TemporaryDirectory() as td:
+            home = Path(td)
+            project = home / "project"
+            project.mkdir()
+            self.run_installer(home, "--scope", "project", "--project", str(project))
+            target = project / ".agents/skills/humanizer-kr"
+            self.assertTrue((target / "SKILL.md").exists())
+            old = target.parent / "humanizer-kr.bak.20261029105201"
+            old.symlink_to(ROOT / "skills/humanizer-kr", target_is_directory=True)
+            self.run_installer(home, "--scope", "project", "--project", str(project))
+            self.assertFalse(old.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

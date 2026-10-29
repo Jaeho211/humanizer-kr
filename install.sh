@@ -10,18 +10,19 @@ AGENTS="omp,agy,codex,claude"
 MODE="copy"
 FORCE=0
 DRY=0
+STAGING=""
 
 usage() {
   cat <<'USAGE'
 Usage: bash install.sh [--scope user|project] [--project DIR] [--agents omp,agy,codex,claude]
                        [--copy|--link] [--force] [--dry-run]
-Default: install or update all four agents in user scope, keeping backups.
+Default: install or update all four agents in user scope; no backup copies.
 Agents: omp, agy (CLI only), codex, claude, all.
 Examples:
   bash install.sh --dry-run
   bash install.sh --scope project --project "$PWD" --agents all
   bash install.sh --force --agents omp,agy
-Note: changed installations are backed up as *.bak.TIMESTAMP; --force also re-installs unchanged ones.
+Running again updates changed skills and removes old Humanizer KR backups.
 USAGE
 }
 
@@ -65,6 +66,76 @@ get_targets() {
     esac
   fi
 }
+
+# Only remove backups created by older versions of this installer.
+# The timestamp-only naming rule and skill metadata avoid unrelated folders.
+remove_old_backups() {
+  local target="$1" backup
+  for backup in "$target".bak.*; do
+    [[ -e "$backup" || -L "$backup" ]] || continue
+    [[ "$backup" =~ \.bak\.[0-9]{14}(\.[0-9]+)?$ ]] || continue
+    if [[ -L "$backup" ]]; then
+      [[ "$(readlink "$backup")" == "$SOURCE" ]] || continue
+    elif [[ -d "$backup" && -f "$backup/SKILL.md" ]] &&
+         grep -Eq '^[[:space:]]*name:[[:space:]]*humanizer-kr[[:space:]]*
+IFS=',' read -r -a agent_list <<< "$AGENTS"
+declare -A seen=()
+targets=()
+for agent in "${agent_list[@]}"; do
+  case "$agent" in omp|agy|codex|claude) ;; *) echo "Invalid agent: $agent" >&2; exit 2 ;; esac
+  while IFS= read -r path; do
+    [[ -n "${seen[$path]:-}" ]] && continue
+    seen["$path"]=1
+    targets+=("$path")
+  done < <(get_targets "$agent")
+done
+
+for target in "${targets[@]}"; do
+  remove_old_backups "$target"
+  if [[ -e "$target" || -L "$target" ]]; then
+    if [[ "$FORCE" -ne 1 ]]; then
+      if [[ "$MODE" == copy && -d "$target" && ! -L "$target" ]] && diff -qr "$SOURCE" "$target" >/dev/null; then
+        echo "UP-TO-DATE: $target"
+        continue
+      fi
+      if [[ "$MODE" == link && -L "$target" && "$(readlink "$target")" == "$SOURCE" ]]; then
+        echo "UP-TO-DATE: $target"
+        continue
+      fi
+    fi
+  fi
+  echo "INSTALL ($MODE): $target"
+  if [[ "$DRY" -eq 1 ]]; then continue; fi
+  mkdir -p "$(dirname "$target")"
+  if [[ "$MODE" == link ]]; then
+    rm -rf -- "$target"
+    ln -s "$SOURCE" "$target"
+  else
+    # Prepare the replacement outside skill search paths, then replace in place.
+    STAGING="$(mktemp -d)"
+    cp -R -- "$SOURCE" "$STAGING/humanizer-kr"
+    rm -rf -- "$target"
+    mv -- "$STAGING/humanizer-kr" "$target"
+    rmdir -- "$STAGING"
+    STAGING=""
+  fi
+done
+if [[ "$DRY" -eq 1 ]]; then echo "Dry run: no files changed."; fi
+echo "완료. 실행 중인 에이전트를 새로 열어 스킬 검색을 확인하세요."
+ "$backup/SKILL.md"; then
+      :
+    else
+      continue
+    fi
+    echo "REMOVE OLD BACKUP: $backup"
+    if [[ "$DRY" -eq 0 ]]; then rm -rf -- "$backup"; fi
+  done
+}
+
+cleanup() {
+  if [[ -n "$STAGING" && -d "$STAGING" ]]; then rm -rf -- "$STAGING"; fi
+}
+trap cleanup EXIT
 
 if [[ "$AGENTS" == all ]]; then AGENTS="omp,agy,codex,claude"; fi
 IFS=',' read -r -a agent_list <<< "$AGENTS"
